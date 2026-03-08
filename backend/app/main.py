@@ -7,7 +7,7 @@ from app.database import create_tables, AsyncSessionLocal
 from app.models.user import User
 from app.models.role import Role, Permission
 from app.core.security import hash_password
-from app.routers import auth, users, buildings, apartments, dues, payments, expenses, announcements, reports, contact
+from app.routers import auth, users, buildings, apartments, dues, payments, expenses, announcements, reports, contact, automation
 
 
 async def seed_roles_and_admin():
@@ -117,6 +117,7 @@ app.include_router(expenses.router)
 app.include_router(announcements.router)
 app.include_router(reports.router)
 app.include_router(contact.router)
+app.include_router(automation.router)
 
 @app.get("/health", tags=["Health"])
 async def health():

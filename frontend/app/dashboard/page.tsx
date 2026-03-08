@@ -22,9 +22,20 @@ interface DebtorItem {
     due_count: number;
 }
 
+interface PredictiveSummary {
+    current_balance: number;
+    expected_income_next_month: number;
+    predicted_expense_next_month: number;
+    inflation_rate_applied: number;
+    net_predicted_balance: number;
+    warning_message: string | null;
+    recommendation: string | null;
+}
+
 export default function DashboardOverview() {
     const [summary, setSummary] = useState<DashboardSummary | null>(null);
     const [debtors, setDebtors] = useState<DebtorItem[]>([]);
+    const [predictive, setPredictive] = useState<PredictiveSummary | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -33,17 +44,15 @@ export default function DashboardOverview() {
                 const token = localStorage.getItem("token");
                 const headers = { "Authorization": `Bearer ${token}` };
 
-                const [summaryRes, debtorsRes] = await Promise.all([
+                const [summaryRes, debtorsRes, predRes] = await Promise.all([
                     fetch("http://localhost:8000/reports/summary", { headers }),
-                    fetch("http://localhost:8000/reports/debtors", { headers })
+                    fetch("http://localhost:8000/reports/debtors", { headers }),
+                    fetch("http://localhost:8000/reports/predictive", { headers })
                 ]);
 
-                if (summaryRes.ok) {
-                    setSummary(await summaryRes.json());
-                }
-                if (debtorsRes.ok) {
-                    setDebtors(await debtorsRes.json());
-                }
+                if (summaryRes.ok) setSummary(await summaryRes.json());
+                if (debtorsRes.ok) setDebtors(await debtorsRes.json());
+                if (predRes.ok) setPredictive(await predRes.json());
             } catch (err) {
                 console.error("Error fetching dashboard data", err);
             } finally {
@@ -153,6 +162,27 @@ export default function DashboardOverview() {
                             </div>
                             <span className="text-lg font-bold text-slate-900">{total_buildings}</span>
                         </div>
+
+                        {predictive ? (
+                            <div className={`p-4 rounded-lg border flex flex-col gap-2 ${predictive.net_predicted_balance < 0 ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
+                                }`}>
+                                <div className={`flex items-center gap-2 font-bold mb-1 ${predictive.net_predicted_balance < 0 ? 'text-red-800' : 'text-blue-800'
+                                    }`}>
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    Nakit Akışı Öngörüsü (AI)
+                                </div>
+                                <p className={`text-sm ${predictive.net_predicted_balance < 0 ? 'text-red-700' : 'text-blue-700'}`}>
+                                    {predictive.warning_message || "Gelecek ayki kasa durumu stabil görünüyor."}
+                                </p>
+                                <p className="text-sm font-semibold text-slate-700 mt-2 bg-white/50 p-2 rounded">
+                                    Öneri: {predictive.recommendation}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 text-sm text-slate-500">
+                                Öngörü verisi yükleniyor...
+                            </div>
+                        )}
 
                         <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
                             <div className="flex items-center gap-3">
