@@ -33,7 +33,7 @@ async def create_user(
         email=data.email,
         phone=data.phone,
         hashed_password=hash_password(data.password),
-        role=data.role,
+        role_id=data.role_id,
     )
     db.add(user)
     await db.commit()
